@@ -44,8 +44,15 @@ class AuthActivity : AppCompatActivity() {
         editTextEmail = findViewById(R.id.editTextEmail)
         passwordEditText = findViewById(R.id.passwordEditText)
 
-        //Setup de la aplicacion
-        setup()
+        // Verificar si hay una sesión activa
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user != null) {
+            // El usuario ya está logueado, vamos a la pantalla principal
+            showHome(user.email ?: "", ProviderType.BASIC)
+        } else {
+            //Setup de la aplicacion
+            setup()
+        }
     }
 
     private fun setup(){
@@ -56,7 +63,6 @@ class AuthActivity : AppCompatActivity() {
                 FirebaseAuth.getInstance()
                     .createUserWithEmailAndPassword(editTextEmail.text.toString(),
                         passwordEditText.text.toString()).addOnCompleteListener{
-
                             if (it.isSuccessful){
                                 showHome(it.result?.user?.email ?: "", ProviderType.BASIC)
                             }else{
