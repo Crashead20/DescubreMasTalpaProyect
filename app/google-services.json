@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "334222818266",
+    "project_id": "descubremastalpaproyec",
+    "storage_bucket": "descubremastalpaproyec.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:334222818266:android:ee97b5c4b51e571b0c9ee3",
+        "android_client_info": {
+          "package_name": "com.example.descubremastalpaproyect"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "334222818266-aiaopa4uetglfmnlgiuitsdpp3i399ia.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.descubremastalpaproyect",
+            "certificate_hash": "3459a9de2ce5fcc9f6c4d0ba63706d077b990da1"
+          }
+        },
+        {
+          "client_id": "334222818266-e2796n26kkhl5g6glsa3ov1amt3a3knt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2UazTvsuFFRP3_5oebq-IFewhlcykm8E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "334222818266-e2796n26kkhl5g6glsa3ov1amt3a3knt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

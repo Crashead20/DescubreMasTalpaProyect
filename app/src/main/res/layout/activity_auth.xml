@@ -9,6 +9,7 @@
     tools:context=".AuthActivity">
 
     <LinearLayout
+        android:id="@+id/authLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
@@ -68,6 +69,7 @@
                 android:backgroundTint="@color/descubreNegroButton"
                 android:text="Registrar"
                 android:textAllCaps="false"
+                android:textColor="@color/descubreFakewhite"
                 app:cornerRadius="3dp"
                 app:strokeColor="@color/descubreFakewhite"
                 app:strokeWidth="1dp" />
@@ -85,6 +87,7 @@
                 android:backgroundTint="@color/descubreNegroButton"
                 android:text="Acceder"
                 android:textAllCaps="false"
+                android:textColor="@color/descubreFakewhite"
                 app:cornerRadius="3dp"
                 app:strokeColor="@color/descubreFakewhite"
                 app:strokeWidth="1dp" />
@@ -92,6 +95,19 @@
             <Space
                 android:layout_width="16dp"
                 android:layout_height="wrap_content" />
+
         </LinearLayout>
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="8dp" />
+
+        <ImageButton
+            android:id="@+id/googleButton"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@color/descubreVerdeOscuro"
+            app:srcCompat="@drawable/logingooglex1" />
     </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
