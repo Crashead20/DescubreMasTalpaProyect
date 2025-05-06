@@ -9,19 +9,35 @@
         android:id="@+id/page_map"
         android:name="com.example.descubremastalpaproyect.MapFragment"
         tools:layout="@layout/fragment_map"
+        android:label="Mapa"
         />
 
     <fragment
         android:id="@+id/page_favorites"
         android:name="com.example.descubremastalpaproyect.FavoritesFragment"
         tools:layout="@layout/fragment_favorites"
+        android:label="Favoritos" />
         />
 
     <fragment
         android:id="@+id/page_routes"
         android:name="com.example.descubremastalpaproyect.RoutesFragment"
         tools:layout="@layout/fragment_routes"
+        android:label="Rutas" />
         />
+
+    <fragment
+        android:id="@+id/page_account"
+        android:name="com.example.descubremastalpaproyect.AccountFragment"
+        tools:layout="@layout/fragment_account"
+        android:label="Cuenta" />
+
+    <fragment
+        android:id="@+id/page_settings"
+        android:name="com.example.descubremastalpaproyect.SettingsFragment"
+        tools:layout="@layout/fragment_settings"
+        android:label="Configuración" />
+
 
 
 </navigation>
