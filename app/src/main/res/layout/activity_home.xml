@@ -8,64 +8,25 @@
     android:background="@color/descubreVerdeOscuro"
     tools:context=".HomeActivity">
 
-    <LinearLayout
-        android:layout_width="0dp"
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/nav_host_fragment"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:defaultNavHost="true"
+        app:navGraph="@navigation/nav"
+        android:name="androidx.navigation.fragment.NavHostFragment"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/BottomNavigationView"/>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/BottomNavigationView"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:menu="@menu/menu_bottom" />
 
-        <TextView
-            android:id="@+id/emailTextView"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:alpha="1"
-            android:foregroundTint="@color/descubreFakewhite"
-            android:padding="8dp"
-            android:text="Email"
-            android:textColor="@color/descubreFakewhite" />
-
-        <Space
-            android:layout_width="match_parent"
-            android:layout_height="8dp" />
-
-        <TextView
-            android:id="@+id/providerTextView"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:alpha="1"
-            android:foregroundTint="@color/descubreFakewhite"
-            android:padding="8dp"
-            android:text="Proveedor"
-            android:textColor="@color/descubreFakewhite" />
-
-        <Space
-            android:layout_width="match_parent"
-            android:layout_height="8dp" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal"/>
-
-        <Button
-            android:id="@+id/exitButton"
-            style="@style/Widget.Material3.Button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:backgroundTint="@color/descubreNegroButton"
-            android:text="Salir"
-            android:textAllCaps="false"
-            app:cornerRadius="3dp"
-            app:strokeColor="@color/descubreFakewhite"
-            app:strokeWidth="1dp" />
-
-    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -19,37 +19,41 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.credentials.CredentialManager
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.NavigationUI
 import com.example.descubremastalpaproyect.AuthActivity.Global
+import com.example.descubremastalpaproyect.databinding.ActivityHomeBinding
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-enum class ProviderType {
-    BASIC, //correo y contraseña BASICO
-    GOOGLE //logueado con google
-}
-
 class HomeActivity : AppCompatActivity() {
 
     //Declarar las variables en la clase
-    private lateinit var email: TextView
-    private lateinit var proveedor: TextView
-    private lateinit var exitButton: Button
+    //private lateinit var email: TextView
+    //private lateinit var proveedor: TextView
+    //private lateinit var exitButton: Button
 
+    private lateinit var binding: ActivityHomeBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        binding = ActivityHomeBinding.inflate(layoutInflater)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_home)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+        setContentView(binding.root)
+        setupNavegacion()
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
+            val sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(sysBars.left, sysBars.top, sysBars.right, 0)
             insets
         }
 
-        //Inicializar las variables aqui
+
+
+        /*/Inicializar las variables aqui
         email = findViewById(R.id.emailTextView)
         proveedor = findViewById(R.id.providerTextView)
         exitButton = findViewById(R.id.exitButton)
@@ -65,10 +69,22 @@ class HomeActivity : AppCompatActivity() {
             setContent{
                 borrar_sesion()
             }
-        }
+        }*/
     }
 
     //FUNCIONES---------------------------------------
+
+    private fun setupNavegacion(){
+        val bottomNavigationView = binding.BottomNavigationView
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        NavigationUI.setupWithNavController(
+            bottomNavigationView,
+            navHostFragment.navController)
+
+    }
+
+
+
     @SuppressLint("CoroutineCreationDuringComposition")
     @Composable
     fun borrar_sesion(){

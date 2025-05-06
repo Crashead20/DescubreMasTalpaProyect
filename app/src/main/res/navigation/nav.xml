@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    app:startDestination="@id/page_map"
+    android:id="@+id/nav">
+
+    <fragment
+        android:id="@+id/page_map"
+        android:name="com.example.descubremastalpaproyect.MapFragment"
+        tools:layout="@layout/fragment_map"
+        />
+
+    <fragment
+        android:id="@+id/page_favorites"
+        android:name="com.example.descubremastalpaproyect.FavoritesFragment"
+        tools:layout="@layout/fragment_favorites"
+        />
+
+    <fragment
+        android:id="@+id/page_routes"
+        android:name="com.example.descubremastalpaproyect.RoutesFragment"
+        tools:layout="@layout/fragment_routes"
+        />
+
+
+</navigation>
