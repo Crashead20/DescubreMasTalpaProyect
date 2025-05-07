@@ -22,6 +22,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <ImageView
+            android:id="@+id/descubremasLogo"
+            android:layout_width="match_parent"
+            android:layout_height="182dp"
+            app:srcCompat="@drawable/ic_account" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="16dp" />
+
         <EditText
             android:id="@+id/editTextEmail"
             android:layout_width="match_parent"

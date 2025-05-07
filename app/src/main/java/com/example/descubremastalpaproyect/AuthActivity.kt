@@ -166,8 +166,8 @@ class AuthActivity : AppCompatActivity() {
                                     var intent = Intent(applicationContext, HomeActivity::class.java)
                                     intent.putExtra("email",task.result?.user?.email)
                                     intent.putExtra("proveedor", "GOOGLE")
+                                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK // Evitar volver atrás
                                     startActivity(intent)
-
                                     guardar_sesion(task.result?.user?.email.toString(),"GOOGLE" )
 
                                 } else {
@@ -199,7 +199,7 @@ class AuthActivity : AppCompatActivity() {
                     intent.putExtra("email",task.result?.user?.email)
                     intent.putExtra("proveedor", "BASIC")
                     startActivity(intent)
-
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK // Evitar volver atrás
                     guardar_sesion(task.result?.user?.email.toString(),"BASIC" )
 
                 } else {
@@ -235,7 +235,9 @@ class AuthActivity : AppCompatActivity() {
             var intent = Intent(this, HomeActivity::class.java)
             intent.putExtra("email", email)
             intent.putExtra("proveedor", proveedor)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK // Evitar volver atrás
             startActivity(intent)
+            finish()
         }
     }
 
@@ -247,77 +249,3 @@ class AuthActivity : AppCompatActivity() {
         guardar_sesion.commit()
     }
 }
-
-/*private fun showAlert(){
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Error")
-        builder.setMessage("Se ha producido un error autenticando al usuario")
-        builder.setPositiveButton("Aceptar",null)
-        val dialog: AlertDialog = builder.create()
-        dialog.show()
-    }
-
-    private fun showHome(email: String, provider: ProviderType){
-        val homeIntent = Intent(this, HomeActivity::class.java).apply {
-            putExtra("email",email)
-            putExtra("provider",provider.name)
-        }
-        startActivity(homeIntent)
-    }*/
-
-
-/*Guardado de datos
-        val prefs = getSharedPreferences(getString(R.string.prefs_files), Context.MODE_PRIVATE).edit()
-        prefs.putString("email", editTextEmail.text.toString())
-        prefs.putString("password", passwordEditText.text.toString())
-        prefs.apply()*/
-
-/* Verificar si hay una sesión activa
-val user = FirebaseAuth.getInstance().currentUser
-if (user != null) {
-    // El usuario ya está logueado, vamos a la pantalla principal
-    showHome(user.email ?: "", ProviderType.BASIC)
-} else {
-    //Setup de la aplicacion
-    setup()
-}*/
-//////////////}
-
-/*private fun setup(){
-    title = "Autenticacion"
-
-    /*signupButton.setOnClickListener{
-        if (editTextEmail.text.isNotEmpty() && passwordEditText.text.isNotEmpty()){
-            FirebaseAuth.getInstance()
-                .createUserWithEmailAndPassword(editTextEmail.text.toString(),
-                    passwordEditText.text.toString()).addOnCompleteListener{
-                        if (it.isSuccessful){
-                            showHome(it.result?.user?.email ?: "", ProviderType.BASIC)
-                        }else{
-                            showAlert()
-                        }
-                }
-        }
-    }*/
-
-    loginButton.setOnClickListener{
-        if (editTextEmail.text.isNotEmpty() && passwordEditText.text.isNotEmpty()){
-            FirebaseAuth.getInstance()
-                .signInWithEmailAndPassword(editTextEmail.text.toString(),
-                    passwordEditText.text.toString()).addOnCompleteListener{
-
-                    if (it.isSuccessful){
-                        showHome(it.result?.user?.email ?: "", ProviderType.BASIC)
-                    }else{
-                        showAlert()
-                    }
-                }
-        }
-    }
-
-    googleButton.setOnClickListener {
-        setContent{
-            loginGoogle()
-        }
-    }
-}*/
