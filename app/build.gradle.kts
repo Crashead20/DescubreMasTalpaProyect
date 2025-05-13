@@ -91,4 +91,7 @@ dependencies {
     //Dependencias de navegacion
     implementation("androidx.navigation:navigation-ui:2.8.9")
     implementation("androidx.navigation:navigation-fragment:2.8.9")
+
+    //Dependencia para OpenStreetMap
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }

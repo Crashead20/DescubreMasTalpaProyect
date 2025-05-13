@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Leaflet Map with Route</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        #map { height: 100vh; width: 100vw; }
+
+        /* Zoom control en la esquina inferior izquierda */
+        .leaflet-bottom.leaflet-left {
+            bottom: 60px !important;
+            left: 10px;
+        }
+
+        /* Cuadro de coordenadas */
+        #coords-box {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: white;
+            padding: 10px;
+            border: 1px solid #ccc;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+            z-index: 1000;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<div id="coords-box"><strong>Coordenadas:</strong><br></div>
+
+<script>
+    const map = L.map('map', {
+        center: [19.4326, -99.1332],
+        zoom: 13,
+        zoomControl: false
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+    }).addTo(map);
+
+    L.control.zoom({ position: 'bottomleft' }).addTo(map);
+
+    const puntos = [];
+    let rutaActual = null;
+    const coordsBox = document.getElementById('coords-box');
+
+    map.on('click', function (e) {
+        const { lat, lng } = e.latlng;
+        puntos.push([lat, lng]);
+
+        // Mostrar coordenadas en el cuadro
+        const p = document.createElement('div');
+        p.textContent = `Punto ${puntos.length}: Lat ${lat.toFixed(5)}, Lng ${lng.toFixed(5)}`;
+        coordsBox.appendChild(p);
+
+        L.marker([lat, lng]).addTo(map).bindPopup(`Punto ${puntos.length}`).openPopup();
+
+        if (puntos.length >= 2) {
+            const coords = JSON.stringify(puntos);
+            if (window.Android && Android.sendCoordinates) {
+                Android.sendCoordinates(coords);
+            }
+        }
+    });
+
+    function drawRoute(geojsonString) {
+        const geojson = JSON.parse(geojsonString);
+        const coords = geojson.features[0].geometry.coordinates;
+        const routeLatLng = coords.map(c => [c[1], c[0]]);
+
+        if (rutaActual) {
+            map.removeLayer(rutaActual);
+        }
+        rutaActual = L.polyline(routeLatLng, { color: 'blue', weight: 5 }).addTo(map);
+        map.fitBounds(rutaActual.getBounds());
+    }
+</script>
+</body>
+</html>
