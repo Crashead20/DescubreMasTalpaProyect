@@ -13,8 +13,7 @@
         android:layout_height="match_parent"
         android:gravity="center"
         android:textSize="20sp"
-        android:textColor="@color/white"
-        android:hint="INSERTE MAPA" />
+        android:textColor="@color/white"/>
 
     <WebView
         android:id="@+id/webView"

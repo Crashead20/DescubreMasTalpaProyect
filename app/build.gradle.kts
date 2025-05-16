@@ -94,4 +94,8 @@ dependencies {
 
     //Dependencia para OpenStreetMap
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    //Dependencia para la ubicacion del usuario
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+
 }

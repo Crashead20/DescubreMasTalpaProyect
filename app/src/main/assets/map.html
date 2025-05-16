@@ -2,87 +2,265 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Leaflet Map with Route</title>
+    <title>Mapa con Ruta Múltiple</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     <style>
-        #map { height: 100vh; width: 100vw; }
-
-        /* Zoom control en la esquina inferior izquierda */
-        .leaflet-bottom.leaflet-left {
-            bottom: 60px !important;
-            left: 10px;
-        }
-
-        /* Cuadro de coordenadas */
-        #coords-box {
+        html, body, #map { height: 100%; margin: 0; padding: 0; }
+        #toggle-routing-instructions {
             position: absolute;
             top: 10px;
             right: 10px;
-            background-color: white;
-            padding: 10px;
-            border: 1px solid #ccc;
-            max-height: 200px;
-            overflow-y: auto;
-            font-family: monospace;
-            font-size: 14px;
             z-index: 1000;
-            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            background-color: #3388ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            display: none;
+        }
+        .leaflet-routing-container {
+            top: 60px !important;
         }
     </style>
 </head>
 <body>
+
 <div id="map"></div>
-<div id="coords-box"><strong>Coordenadas:</strong><br></div>
+<button id="toggle-routing-instructions">Mostrar Indicaciones</button>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 
 <script>
-    const map = L.map('map', {
-        center: [19.4326, -99.1332],
-        zoom: 13,
-        zoomControl: false
-    });
+    const map = L.map('map').setView([19.9124, -104.7263], 17);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
+        attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    L.control.zoom({ position: 'bottomleft' }).addTo(map);
+    const locationMarker = L.circleMarker([19.9124, -104.7263], {
+        radius: 10,
+        color: '#3388ff',
+        weight: 2,
+        fillColor: '#3388ff',
+        fillOpacity: 0.5
+    }).addTo(map);
 
-    const puntos = [];
-    let rutaActual = null;
-    const coordsBox = document.getElementById('coords-box');
+    let routingControl = null;
+    let destinationMarkers = [];
 
-    map.on('click', function (e) {
-        const { lat, lng } = e.latlng;
-        puntos.push([lat, lng]);
+    const btnToggleInstructions = document.getElementById('toggle-routing-instructions');
+    let instructionsVisible = false;
+    let hasCenteredOnUser = false;
+    let hasCenteredOnRoute = false;
 
-        // Mostrar coordenadas en el cuadro
-        const p = document.createElement('div');
-        p.textContent = `Punto ${puntos.length}: Lat ${lat.toFixed(5)}, Lng ${lng.toFixed(5)}`;
-        coordsBox.appendChild(p);
+    btnToggleInstructions.onclick = () => {
+        if (!routingControl) return;
+        const container = routingControl.getContainer();
+        if (!container) return;
 
-        L.marker([lat, lng]).addTo(map).bindPopup(`Punto ${puntos.length}`).openPopup();
+        if (instructionsVisible) {
+            container.style.display = 'none';
+            btnToggleInstructions.textContent = 'Mostrar Indicaciones';
+            instructionsVisible = false;
+        } else {
+            container.style.display = 'block';
+            btnToggleInstructions.textContent = 'Ocultar Indicaciones';
+            instructionsVisible = true;
+        }
+    };
 
-        if (puntos.length >= 2) {
-            const coords = JSON.stringify(puntos);
-            if (window.Android && Android.sendCoordinates) {
-                Android.sendCoordinates(coords);
+    function createDestinationMarker(latlng) {
+        const marker = L.marker(latlng, { draggable: false });
+        const popupContent = document.createElement('div');
+        popupContent.style.display = 'flex';
+        popupContent.style.alignItems = 'center';
+
+        const label = document.createElement('span');
+        label.textContent = 'Destino';
+        label.style.marginRight = '8px';
+
+        const button = document.createElement('button');
+        button.textContent = 'X';
+        button.style.background = '#ff4d4d';
+        button.style.color = 'white';
+        button.style.border = 'none';
+        button.style.borderRadius = '3px';
+        button.style.cursor = 'pointer';
+        button.style.padding = '2px 6px';
+
+        button.onclick = function () {
+            map.removeLayer(marker);
+            destinationMarkers = destinationMarkers.filter(m => m !== marker);
+
+            if (destinationMarkers.length === 0) {
+                if (routingControl) {
+                    map.removeControl(routingControl);
+                    routingControl = null;
+                }
+                btnToggleInstructions.style.display = 'none';
+                instructionsVisible = false;
+                hasCenteredOnRoute = false;
+                return;
+            }
+
+            const userLatLng = locationMarker.getLatLng();
+            const allPoints = [userLatLng, ...destinationMarkers.map(m => m.getLatLng())];
+
+            if (routingControl) {
+                map.removeControl(routingControl);
+            }
+
+            routingControl = L.Routing.control({
+                waypoints: allPoints,
+                routeWhileDragging: false,
+                addWaypoints: false,
+                draggableWaypoints: false,
+                showAlternatives: false,
+                fitSelectedRoutes: false,
+                createMarker: () => null,
+                lineOptions: {
+                    styles: [{ color: 'blue', opacity: 0.7, weight: 5 }]
+                },
+                language: 'es',
+                router: new L.Routing.OSRMv1({
+                    serviceUrl: 'https://router.project-osrm.org/route/v1'
+                })
+            }).addTo(map);
+
+            routingControl.on('routesfound', function (e) {
+                e.routes.forEach(route => {
+                    route.instructions.forEach(instruction => {
+                        instruction.text = traducirTexto(instruction.text);
+                    });
+                });
+
+                const container = routingControl.getContainer();
+                if (container) {
+                    container.style.display = 'none';
+                    btnToggleInstructions.style.display = 'block';
+                    btnToggleInstructions.textContent = 'Mostrar Indicaciones';
+                    instructionsVisible = false;
+                }
+
+                const route = e.routes[0];
+                if (route && !hasCenteredOnRoute) {
+                    const bounds = L.latLngBounds(route.coordinates);
+                    map.fitBounds(bounds);
+                    hasCenteredOnRoute = true;
+                }
+            });
+        };
+
+        popupContent.appendChild(label);
+        popupContent.appendChild(button);
+        marker.bindPopup(popupContent);
+        return marker;
+    }
+
+    function traducirTexto(text) {
+        const traducciones = [
+            { en: 'Head northwest on', es: 'Dirígete hacia el noroeste por' },
+            { en: 'Head northeast on', es: 'Dirígete hacia el noreste por' },
+            { en: 'Head southwest on', es: 'Dirígete hacia el suroeste por' },
+            { en: 'Head southeast on', es: 'Dirígete hacia el sureste por' },
+            { en: 'Head east on', es: 'Dirígete hacia el este por' },
+            { en: 'Head west on', es: 'Dirígete hacia el oeste por' },
+            { en: 'Head north on', es: 'Dirígete hacia el norte por' },
+            { en: 'Head south on', es: 'Dirígete hacia el sur por' },
+            { en: 'Turn right onto', es: 'Gira a la derecha en' },
+            { en: 'Turn left onto', es: 'Gira a la izquierda en' },
+            { en: 'Continue straight onto', es: 'Continúa recto en' },
+            { en: 'Turn right to stay on', es: 'Gira a la derecha para seguir en' },
+            { en: 'Turn left to stay on', es: 'Gira a la izquierda para seguir en' },
+            { en: 'Make a sharp left onto', es: 'Gira pronunciadamente a la izquierda en' },
+            { en: 'Make a sharp right onto', es: 'Gira pronunciadamente a la derecha en' },
+            { en: 'Make a slight left onto', es: 'Gira levemente a la izquierda en' },
+            { en: 'Make a slight right onto', es: 'Gira levemente a la derecha en' },
+            { en: 'Merge onto', es: 'Incorpórate a' },
+            { en: 'You have arrived at your destination, on the right', es: 'Has llegado a tu destino, a la derecha' },
+            { en: 'You have arrived at your destination, on the left', es: 'Has llegado a tu destino, a la izquierda' },
+            { en: 'You have arrived at your destination', es: 'Has llegado a tu destino' },
+            { en: 'You have arrived at your 1st destination', es: 'Has llegado a tu primer destino' },
+        ];
+
+        for (const t of traducciones) {
+            if (text.startsWith(t.en)) {
+                return text.replace(t.en, t.es);
             }
         }
+        return text;
+    }
+
+    map.on('click', function (e) {
+        const userLatLng = locationMarker.getLatLng();
+
+        const marker = createDestinationMarker(e.latlng).addTo(map).openPopup();
+        destinationMarkers.push(marker);
+
+        const allPoints = [userLatLng, ...destinationMarkers.map(m => m.getLatLng())];
+
+        if (routingControl) {
+            map.removeControl(routingControl);
+        }
+
+        routingControl = L.Routing.control({
+            waypoints: allPoints,
+            routeWhileDragging: false,
+            addWaypoints: false,
+            draggableWaypoints: false,
+            showAlternatives: false,
+            fitSelectedRoutes: false,
+            createMarker: () => null,
+            lineOptions: {
+                styles: [{ color: 'blue', opacity: 0.7, weight: 5 }]
+            },
+            language: 'es',
+            router: new L.Routing.OSRMv1({
+                serviceUrl: 'https://router.project-osrm.org/route/v1'
+            })
+        }).addTo(map);
+
+        routingControl.on('routesfound', function (e) {
+            e.routes.forEach(route => {
+                route.instructions.forEach(instruction => {
+                    instruction.text = traducirTexto(instruction.text);
+                });
+            });
+
+            const container = routingControl.getContainer();
+            if (container) {
+                container.style.display = 'none';
+                btnToggleInstructions.style.display = 'block';
+                btnToggleInstructions.textContent = 'Mostrar Indicaciones';
+                instructionsVisible = false;
+            }
+
+            if (!hasCenteredOnRoute) {
+                const route = e.routes[0];
+                if (route) {
+                    const bounds = L.latLngBounds(route.coordinates);
+                    map.fitBounds(bounds);
+                    hasCenteredOnRoute = true;
+                }
+            }
+        });
     });
 
-    function drawRoute(geojsonString) {
-        const geojson = JSON.parse(geojsonString);
-        const coords = geojson.features[0].geometry.coordinates;
-        const routeLatLng = coords.map(c => [c[1], c[0]]);
-
-        if (rutaActual) {
-            map.removeLayer(rutaActual);
+    window.setInitialLocation = function(lat, lng) {
+        locationMarker.setLatLng([lat, lng]);
+        if (!hasCenteredOnUser) {
+            map.setView([lat, lng], 17);
+            hasCenteredOnUser = true;
         }
-        rutaActual = L.polyline(routeLatLng, { color: 'blue', weight: 5 }).addTo(map);
-        map.fitBounds(rutaActual.getBounds());
-    }
+    };
 </script>
+
 </body>
 </html>
