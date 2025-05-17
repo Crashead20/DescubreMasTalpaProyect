@@ -98,4 +98,8 @@ dependencies {
     //Dependencia para la ubicacion del usuario
     implementation("com.google.android.gms:play-services-location:21.0.1")
 
+    //Dependencia para la insertacion de imagenesURL en el bottomsheet
+    implementation ("com.github.bumptech.glide:glide:4.15.1")
+
+
 }

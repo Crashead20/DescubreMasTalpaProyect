@@ -57,7 +57,6 @@
 
     const btnToggleInstructions = document.getElementById('toggle-routing-instructions');
     let instructionsVisible = false;
-    let hasCenteredOnUser = false;
     let hasCenteredOnRoute = false;
 
     btnToggleInstructions.onclick = () => {
@@ -76,95 +75,7 @@
         }
     };
 
-    function createDestinationMarker(latlng) {
-        const marker = L.marker(latlng, { draggable: false });
-        const popupContent = document.createElement('div');
-        popupContent.style.display = 'flex';
-        popupContent.style.alignItems = 'center';
-
-        const label = document.createElement('span');
-        label.textContent = 'Destino';
-        label.style.marginRight = '8px';
-
-        const button = document.createElement('button');
-        button.textContent = 'X';
-        button.style.background = '#ff4d4d';
-        button.style.color = 'white';
-        button.style.border = 'none';
-        button.style.borderRadius = '3px';
-        button.style.cursor = 'pointer';
-        button.style.padding = '2px 6px';
-
-        button.onclick = function () {
-            map.removeLayer(marker);
-            destinationMarkers = destinationMarkers.filter(m => m !== marker);
-
-            if (destinationMarkers.length === 0) {
-                if (routingControl) {
-                    map.removeControl(routingControl);
-                    routingControl = null;
-                }
-                btnToggleInstructions.style.display = 'none';
-                instructionsVisible = false;
-                hasCenteredOnRoute = false;
-                return;
-            }
-
-            const userLatLng = locationMarker.getLatLng();
-            const allPoints = [userLatLng, ...destinationMarkers.map(m => m.getLatLng())];
-
-            if (routingControl) {
-                map.removeControl(routingControl);
-            }
-
-            routingControl = L.Routing.control({
-                waypoints: allPoints,
-                routeWhileDragging: false,
-                addWaypoints: false,
-                draggableWaypoints: false,
-                showAlternatives: false,
-                fitSelectedRoutes: false,
-                createMarker: () => null,
-                lineOptions: {
-                    styles: [{ color: 'blue', opacity: 0.7, weight: 5 }]
-                },
-                language: 'es',
-                router: new L.Routing.OSRMv1({
-                    serviceUrl: 'https://router.project-osrm.org/route/v1'
-                })
-            }).addTo(map);
-
-            routingControl.on('routesfound', function (e) {
-                e.routes.forEach(route => {
-                    route.instructions.forEach(instruction => {
-                        instruction.text = traducirTexto(instruction.text);
-                    });
-                });
-
-                const container = routingControl.getContainer();
-                if (container) {
-                    container.style.display = 'none';
-                    btnToggleInstructions.style.display = 'block';
-                    btnToggleInstructions.textContent = 'Mostrar Indicaciones';
-                    instructionsVisible = false;
-                }
-
-                const route = e.routes[0];
-                if (route && !hasCenteredOnRoute) {
-                    const bounds = L.latLngBounds(route.coordinates);
-                    map.fitBounds(bounds);
-                    hasCenteredOnRoute = true;
-                }
-            });
-        };
-
-        popupContent.appendChild(label);
-        popupContent.appendChild(button);
-        marker.bindPopup(popupContent);
-        return marker;
-    }
-
-    function traducirTexto(text) {
+      function traducirTexto(text) {
         const traducciones = [
             { en: 'Head northwest on', es: 'Dirígete hacia el noroeste por' },
             { en: 'Head northeast on', es: 'Dirígete hacia el noreste por' },
@@ -198,12 +109,8 @@
         return text;
     }
 
-    map.on('click', function (e) {
+    function actualizarRuta() {
         const userLatLng = locationMarker.getLatLng();
-
-        const marker = createDestinationMarker(e.latlng).addTo(map).openPopup();
-        destinationMarkers.push(marker);
-
         const allPoints = [userLatLng, ...destinationMarkers.map(m => m.getLatLng())];
 
         if (routingControl) {
@@ -242,24 +149,80 @@
                 instructionsVisible = false;
             }
 
-            if (!hasCenteredOnRoute) {
-                const route = e.routes[0];
-                if (route) {
-                    const bounds = L.latLngBounds(route.coordinates);
-                    map.fitBounds(bounds);
-                    hasCenteredOnRoute = true;
-                }
+            const route = e.routes[0];
+            if (route && !hasCenteredOnRoute) {
+                const bounds = L.latLngBounds(route.coordinates);
+                map.fitBounds(bounds);
+                hasCenteredOnRoute = true;
             }
         });
-    });
+    }
 
-    window.setInitialLocation = function(lat, lng) {
-        locationMarker.setLatLng([lat, lng]);
-        if (!hasCenteredOnUser) {
-            map.setView([lat, lng], 17);
-            hasCenteredOnUser = true;
-        }
-    };
+    function createDestinationMarker(latlng) {
+        const marker = L.marker(latlng, { draggable: false });
+
+        const popupContent = document.createElement('div');
+        popupContent.style.display = 'flex';
+        popupContent.style.alignItems = 'center';
+
+        const label = document.createElement('span');
+        label.textContent = 'Destino';
+        label.style.marginRight = '8px';
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'X';
+        deleteBtn.style.background = '#ff4d4d';
+        deleteBtn.style.color = 'white';
+        deleteBtn.style.border = 'none';
+        deleteBtn.style.borderRadius = '3px';
+        deleteBtn.style.cursor = 'pointer';
+        deleteBtn.style.padding = '2px 6px';
+
+        deleteBtn.onclick = () => {
+            map.removeLayer(marker);
+            destinationMarkers = destinationMarkers.filter(m => m !== marker);
+            if (destinationMarkers.length === 0) {
+                if (routingControl) {
+                    map.removeControl(routingControl);
+                    routingControl = null;
+                }
+                btnToggleInstructions.style.display = 'none';
+                instructionsVisible = false;
+                hasCenteredOnRoute = false;
+            } else {
+                actualizarRuta();
+            }
+        };
+
+        const infoButton = document.createElement('button');
+        infoButton.textContent = 'Ver Info';
+        infoButton.style.marginLeft = '8px';
+        infoButton.onclick = () => {
+            if (typeof Android !== 'undefined' && Android.showInfo) {
+                Android.showInfo(
+                    'Nombre del Lugar',
+                    'Descripción de ejemplo para el destino seleccionado.',
+                    'https://via.placeholder.com/300'
+                );
+            } else {
+                alert('Nombre del Lugar\nDescripción de ejemplo para el destino seleccionado.');
+            }
+        };
+
+        popupContent.appendChild(label);
+        popupContent.appendChild(deleteBtn);
+        popupContent.appendChild(infoButton);
+
+        marker.bindPopup(popupContent);
+
+        return marker;
+    }
+
+    map.on('click', function (e) {
+        const marker = createDestinationMarker(e.latlng).addTo(map).openPopup();
+        destinationMarkers.push(marker);
+        actualizarRuta();
+    });
 </script>
 
 </body>
