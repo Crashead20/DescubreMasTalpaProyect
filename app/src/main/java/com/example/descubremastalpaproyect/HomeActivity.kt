@@ -1,6 +1,7 @@
 package com.example.descubremastalpaproyect
-
 import android.os.Bundle
+import android.widget.ImageButton
+import androidx.appcompat.widget.Toolbar
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -21,33 +22,24 @@ class HomeActivity : AppCompatActivity() {
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        enableEdgeToEdge()
-
-        // Obtener NavController del NavHostFragment
+        // Configurar navegación
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
-
-        // Configurar BottomNavigationView con NavController
         NavigationUI.setupWithNavController(binding.BottomNavigationView, navController)
 
-        // Configurar ícono de cuenta (navegaciónIcon)
-        binding.topAppBar.setNavigationOnClickListener {
+        // Configurar botones del custom toolbar
+        val toolbar = findViewById<Toolbar>(R.id.topAppBar)
+        val accountBtn = toolbar.findViewById<ImageButton>(R.id.account_button)
+        val settingsBtn = toolbar.findViewById<ImageButton>(R.id.settings_button)
+
+        accountBtn.setOnClickListener {
             navController.navigate(R.id.page_account)
         }
-
-        // Configurar ítem de configuración en el menú superior
-        binding.topAppBar.setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.icon_settings -> {
-                    navController.navigate(R.id.page_settings)
-                    true
-                }
-                else -> false
-            }
+        settingsBtn.setOnClickListener {
+            navController.navigate(R.id.page_settings)
         }
-
-        // Soporte para edge-to-edge
+        // Edge-to-edge
         enableEdgeToEdge()
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
             val sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())

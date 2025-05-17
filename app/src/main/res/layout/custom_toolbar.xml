@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.Toolbar xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/topAppBar"
+    android:layout_width="match_parent"
+    android:layout_height="?attr/actionBarSize"
+    android:background="@color/descubreVerdeOscuro"
+    android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar"
+    app:contentInsetStart="0dp"
+    app:popupTheme="@style/ThemeOverlay.Material3.Light">
+
+    <!-- Botón izquierdo (cuenta) -->
+    <ImageButton
+        android:id="@+id/account_button"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Cuenta"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:src="@drawable/ic_account" />
+
+    <!-- Texto decorativo centrado -->
+    <TextView
+        android:id="@+id/center_title"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:text="Descubre+ Talpa"
+        android:textColor="@android:color/white"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <!-- Botón derecho (configuración) -->
+    <ImageButton
+        android:id="@+id/settings_button"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="end"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Configuración"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:src="@drawable/ic_settings" />
+
+</androidx.appcompat.widget.Toolbar>

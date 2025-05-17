@@ -8,15 +8,9 @@
     android:background="@color/descubreVerdeOscuro"
     tools:context=".HomeActivity">
 
-    <com.google.android.material.appbar.MaterialToolbar
+    <include
         android:id="@+id/topAppBar"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
-        android:title="Descubre+ Talpa"
-        android:titleTextColor="@android:color/white"
-        app:navigationIcon="@drawable/ic_account"
-        app:menu="@menu/menu_top"
+        layout="@layout/custom_toolbar"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

@@ -1,9 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- Elemento de texto decorativo -->
+    <item
+        android:id="@+id/menu_decorative_text"
+        android:title="DescubremasTalpa"
+        app:actionViewClass="android.widget.TextView"
+        app:showAsAction="always"
+        android:enabled="false"
+        android:checkable="false"
+        android:icon="@null"
+        android:orderInCategory="1" />
+
+    <!-- Ícono de configuración -->
     <item
         android:id="@+id/icon_settings"
         android:icon="@drawable/ic_settings"
         android:title="Configuración"
-        app:showAsAction="always" />
+        app:showAsAction="always"
+        android:orderInCategory="2" />
 </menu>
