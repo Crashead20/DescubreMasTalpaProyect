@@ -52,30 +52,27 @@
         fillOpacity: 0.5
     }).addTo(map);
 
+
     let routingControl = null;
     let destinationMarkers = [];
+    let instructionsVisible = false;
+    let hasZoomedToInitialLocation = false;
+    let shouldZoomToRoute = false;
+    let currentPosition = L.latLng([19.9124, -104.7263]);
 
     const btnToggleInstructions = document.getElementById('toggle-routing-instructions');
-    let instructionsVisible = false;
-    let hasCenteredOnRoute = false;
 
     btnToggleInstructions.onclick = () => {
         if (!routingControl) return;
         const container = routingControl.getContainer();
         if (!container) return;
 
-        if (instructionsVisible) {
-            container.style.display = 'none';
-            btnToggleInstructions.textContent = 'Mostrar Indicaciones';
-            instructionsVisible = false;
-        } else {
-            container.style.display = 'block';
-            btnToggleInstructions.textContent = 'Ocultar Indicaciones';
-            instructionsVisible = true;
-        }
+        container.style.display = instructionsVisible ? 'none' : 'block';
+        btnToggleInstructions.textContent = instructionsVisible ? 'Mostrar Indicaciones' : 'Ocultar Indicaciones';
+        instructionsVisible = !instructionsVisible;
     };
 
-      function traducirTexto(text) {
+    function traducirTexto(text) {
         const traducciones = [
             { en: 'Head northwest on', es: 'Dirígete hacia el noroeste por' },
             { en: 'Head northeast on', es: 'Dirígete hacia el noreste por' },
@@ -95,12 +92,8 @@
             { en: 'Make a slight left onto', es: 'Gira levemente a la izquierda en' },
             { en: 'Make a slight right onto', es: 'Gira levemente a la derecha en' },
             { en: 'Merge onto', es: 'Incorpórate a' },
-            { en: 'You have arrived at your destination, on the right', es: 'Has llegado a tu destino, a la derecha' },
-            { en: 'You have arrived at your destination, on the left', es: 'Has llegado a tu destino, a la izquierda' },
             { en: 'You have arrived at your destination', es: 'Has llegado a tu destino' },
-            { en: 'You have arrived at your 1st destination', es: 'Has llegado a tu primer destino' },
         ];
-
         for (const t of traducciones) {
             if (text.startsWith(t.en)) {
                 return text.replace(t.en, t.es);
@@ -110,53 +103,54 @@
     }
 
     function actualizarRuta() {
-        const userLatLng = locationMarker.getLatLng();
-        const allPoints = [userLatLng, ...destinationMarkers.map(m => m.getLatLng())];
+    if (destinationMarkers.length === 0) return;
 
-        if (routingControl) {
-            map.removeControl(routingControl);
+    const allPoints = [currentPosition, ...destinationMarkers.map(m => m.getLatLng())];
+
+    if (routingControl) {
+        routingControl.setWaypoints(allPoints);
+        return;
+    }
+
+    routingControl = L.Routing.control({
+        waypoints: allPoints,
+        routeWhileDragging: false,
+        addWaypoints: false,
+        draggableWaypoints: false,
+        showAlternatives: false,
+        fitSelectedRoutes: false,
+        createMarker: () => null,
+        lineOptions: {
+            styles: [{ color: 'blue', opacity: 0.7, weight: 5 }]
+        },
+        language: 'es',
+        router: new L.Routing.OSRMv1({
+            serviceUrl: 'https://router.project-osrm.org/route/v1'
+        })
+    }).addTo(map);
+
+    routingControl.on('routesfound', function (e) {
+        e.routes.forEach(route => {
+            route.instructions.forEach(instruction => {
+                instruction.text = traducirTexto(instruction.text);
+            });
+        });
+
+        const container = routingControl.getContainer();
+        if (container) {
+            container.style.display = instructionsVisible ? 'block' : 'none';
+            btnToggleInstructions.style.display = 'block';
+            btnToggleInstructions.textContent = instructionsVisible ? 'Ocultar Indicaciones' : 'Mostrar Indicaciones';
         }
 
-        routingControl = L.Routing.control({
-            waypoints: allPoints,
-            routeWhileDragging: false,
-            addWaypoints: false,
-            draggableWaypoints: false,
-            showAlternatives: false,
-            fitSelectedRoutes: false,
-            createMarker: () => null,
-            lineOptions: {
-                styles: [{ color: 'blue', opacity: 0.7, weight: 5 }]
-            },
-            language: 'es',
-            router: new L.Routing.OSRMv1({
-                serviceUrl: 'https://router.project-osrm.org/route/v1'
-            })
-        }).addTo(map);
+        if (shouldZoomToRoute && e.routes.length > 0) {
+            map.fitBounds(L.latLngBounds(e.routes[0].coordinates));
+            shouldZoomToRoute = false;
+        }
 
-        routingControl.on('routesfound', function (e) {
-            e.routes.forEach(route => {
-                route.instructions.forEach(instruction => {
-                    instruction.text = traducirTexto(instruction.text);
-                });
-            });
+    });
+}
 
-            const container = routingControl.getContainer();
-            if (container) {
-                container.style.display = 'none';
-                btnToggleInstructions.style.display = 'block';
-                btnToggleInstructions.textContent = 'Mostrar Indicaciones';
-                instructionsVisible = false;
-            }
-
-            const route = e.routes[0];
-            if (route && !hasCenteredOnRoute) {
-                const bounds = L.latLngBounds(route.coordinates);
-                map.fitBounds(bounds);
-                hasCenteredOnRoute = true;
-            }
-        });
-    }
 
     function createDestinationMarker(latlng) {
         const marker = L.marker(latlng, { draggable: false });
@@ -181,15 +175,14 @@
         deleteBtn.onclick = () => {
             map.removeLayer(marker);
             destinationMarkers = destinationMarkers.filter(m => m !== marker);
-            if (destinationMarkers.length === 0) {
-                if (routingControl) {
-                    map.removeControl(routingControl);
-                    routingControl = null;
-                }
+
+            if (destinationMarkers.length === 0 && routingControl) {
+                map.removeControl(routingControl);
+                routingControl = null;
                 btnToggleInstructions.style.display = 'none';
                 instructionsVisible = false;
-                hasCenteredOnRoute = false;
             } else {
+                shouldZoomToRoute = false;
                 actualizarRuta();
             }
         };
@@ -197,13 +190,15 @@
         const infoButton = document.createElement('button');
         infoButton.textContent = 'Ver Info';
         infoButton.style.marginLeft = '8px';
+        const nombre = 'Nombre del Lugar xd';
+        const descripcion = 'Descripción de ejemplo para el destino seleccionado.';
+        const imagenUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/640px-PNG_transparency_demonstration_1.png";
         infoButton.onclick = () => {
             if (typeof Android !== 'undefined' && Android.showInfo) {
                 Android.showInfo(
-                    'Nombre del Lugar',
-                    'Descripción de ejemplo para el destino seleccionado.',
-                    'https://via.placeholder.com/300'
-                );
+                    nombre,
+                    descripcion,
+                    imagenUrl);
             } else {
                 alert('Nombre del Lugar\nDescripción de ejemplo para el destino seleccionado.');
             }
@@ -214,15 +209,43 @@
         popupContent.appendChild(infoButton);
 
         marker.bindPopup(popupContent);
-
         return marker;
     }
 
     map.on('click', function (e) {
         const marker = createDestinationMarker(e.latlng).addTo(map).openPopup();
         destinationMarkers.push(marker);
+        shouldZoomToRoute = true;
         actualizarRuta();
     });
+
+    function setInitialLocation(lat, lng) {
+        currentPosition = L.latLng(lat, lng);
+        locationMarker.setLatLng(currentPosition);
+
+        if (!hasZoomedToInitialLocation) {
+            map.setView(currentPosition, 17);
+            hasZoomedToInitialLocation = true;
+        }
+
+        if (destinationMarkers.length > 0) {
+            actualizarRuta();
+        }
+    }
+
+    if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                setInitialLocation(lat, lng);
+            },
+            (err) => {
+                console.error("Error obteniendo ubicación", err);
+            },
+            { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+        );
+    }
 </script>
 
 </body>

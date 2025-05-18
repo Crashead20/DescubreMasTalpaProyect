@@ -12,18 +12,38 @@
 
         <LinearLayout
             android:id="@+id/LinearLayout"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="415dp"
+            android:layout_height="732dp"
             android:orientation="vertical"
             android:paddingLeft="30dp"
             android:paddingTop="100dp"
-            android:paddingEnd="30dp">
+            android:paddingEnd="30dp"
+            tools:layout_editor_absoluteX="0dp"
+            tools:layout_editor_absoluteY="-1dp">
+
+            <TextView
+                android:id="@+id/tittleAccount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="10dp"
+                android:text="CONFIGURACIÓN DE CUENTA"
+                android:textAlignment="center"
+                android:textSize="24sp" />
 
             <ImageView
                 android:id="@+id/imageView"
                 android:layout_width="match_parent"
                 android:layout_height="162dp"
                 android:src="@drawable/ic_account" />
+
+            <TextView
+                android:id="@+id/tittleAccount2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="10dp"
+                android:text="Datos de Usuario:"
+                android:textAlignment="center"
+                android:textSize="24sp" />
 
             <Space
                 android:layout_width="match_parent"
@@ -33,6 +53,7 @@
                 android:id="@+id/txtEmail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@color/descubreBeige"
                 android:text="Email:"
                 android:textSize="20sp" />
 
@@ -44,6 +65,7 @@
                 android:id="@+id/txtProvider"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@color/descubreBeige"
                 android:text="Proveedor:"
                 android:textSize="20sp" />
 
@@ -62,7 +84,9 @@
                     android:id="@+id/logoutButton"
                     android:layout_width="match_parent"
                     android:layout_height="60dp"
-                    android:text="Cerrar Sesión" />
+                    android:backgroundTint="@color/descubreFakewhite"
+                    android:text="Cerrar Sesión"
+                    android:textColor="@color/descubreNegroButton" />
             </LinearLayout>
 
         </LinearLayout>

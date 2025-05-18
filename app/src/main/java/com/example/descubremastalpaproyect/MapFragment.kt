@@ -86,7 +86,10 @@ class MapFragment : Fragment() {
 
         nombreText.text = nombre
         descripcionText.text = descripcion
-        Glide.with(this).load(imagenUrl).into(imagen)
+        Glide.with(requireContext()).load(imagenUrl)
+            .placeholder(R.drawable.baseline_refresh_24)
+            .error(R.drawable.ic_map)
+            .into(imagen)
 
         boton.setOnClickListener {
             Toast.makeText(requireContext(), "Agregar acción futura", Toast.LENGTH_SHORT).show()
