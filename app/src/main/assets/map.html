@@ -2,8 +2,13 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Mapa con Ruta Múltiple</title>
+    <title>Mapa con Ruta Manual</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     <style>
@@ -54,28 +59,24 @@
 
     let routingControl = null;
     let destinationMarkers = [];
+    let instructionsVisible = false;
+    let hasZoomedToInitialLocation = false;
+    let shouldZoomToRoute = false;
+    let currentPosition = L.latLng([19.9124, -104.7263]);
 
     const btnToggleInstructions = document.getElementById('toggle-routing-instructions');
-    let instructionsVisible = false;
-    let hasCenteredOnRoute = false;
 
     btnToggleInstructions.onclick = () => {
         if (!routingControl) return;
         const container = routingControl.getContainer();
         if (!container) return;
 
-        if (instructionsVisible) {
-            container.style.display = 'none';
-            btnToggleInstructions.textContent = 'Mostrar Indicaciones';
-            instructionsVisible = false;
-        } else {
-            container.style.display = 'block';
-            btnToggleInstructions.textContent = 'Ocultar Indicaciones';
-            instructionsVisible = true;
-        }
+        container.style.display = instructionsVisible ? 'none' : 'block';
+        btnToggleInstructions.textContent = instructionsVisible ? 'Mostrar Indicaciones' : 'Ocultar Indicaciones';
+        instructionsVisible = !instructionsVisible;
     };
 
-      function traducirTexto(text) {
+    function traducirTexto(text) {
         const traducciones = [
             { en: 'Head northwest on', es: 'Dirígete hacia el noroeste por' },
             { en: 'Head northeast on', es: 'Dirígete hacia el noreste por' },
@@ -88,19 +89,8 @@
             { en: 'Turn right onto', es: 'Gira a la derecha en' },
             { en: 'Turn left onto', es: 'Gira a la izquierda en' },
             { en: 'Continue straight onto', es: 'Continúa recto en' },
-            { en: 'Turn right to stay on', es: 'Gira a la derecha para seguir en' },
-            { en: 'Turn left to stay on', es: 'Gira a la izquierda para seguir en' },
-            { en: 'Make a sharp left onto', es: 'Gira pronunciadamente a la izquierda en' },
-            { en: 'Make a sharp right onto', es: 'Gira pronunciadamente a la derecha en' },
-            { en: 'Make a slight left onto', es: 'Gira levemente a la izquierda en' },
-            { en: 'Make a slight right onto', es: 'Gira levemente a la derecha en' },
-            { en: 'Merge onto', es: 'Incorpórate a' },
-            { en: 'You have arrived at your destination, on the right', es: 'Has llegado a tu destino, a la derecha' },
-            { en: 'You have arrived at your destination, on the left', es: 'Has llegado a tu destino, a la izquierda' },
             { en: 'You have arrived at your destination', es: 'Has llegado a tu destino' },
-            { en: 'You have arrived at your 1st destination', es: 'Has llegado a tu primer destino' },
         ];
-
         for (const t of traducciones) {
             if (text.startsWith(t.en)) {
                 return text.replace(t.en, t.es);
@@ -110,11 +100,12 @@
     }
 
     function actualizarRuta() {
-        const userLatLng = locationMarker.getLatLng();
-        const allPoints = [userLatLng, ...destinationMarkers.map(m => m.getLatLng())];
+        if (destinationMarkers.length === 0) return;
+        const allPoints = [currentPosition, ...destinationMarkers.map(m => m.getLatLng())];
 
         if (routingControl) {
-            map.removeControl(routingControl);
+            routingControl.setWaypoints(allPoints);
+            return;
         }
 
         routingControl = L.Routing.control({
@@ -128,7 +119,6 @@
             lineOptions: {
                 styles: [{ color: 'blue', opacity: 0.7, weight: 5 }]
             },
-            language: 'es',
             router: new L.Routing.OSRMv1({
                 serviceUrl: 'https://router.project-osrm.org/route/v1'
             })
@@ -143,22 +133,19 @@
 
             const container = routingControl.getContainer();
             if (container) {
-                container.style.display = 'none';
+                container.style.display = instructionsVisible ? 'block' : 'none';
                 btnToggleInstructions.style.display = 'block';
-                btnToggleInstructions.textContent = 'Mostrar Indicaciones';
-                instructionsVisible = false;
+                btnToggleInstructions.textContent = instructionsVisible ? 'Ocultar Indicaciones' : 'Mostrar Indicaciones';
             }
 
-            const route = e.routes[0];
-            if (route && !hasCenteredOnRoute) {
-                const bounds = L.latLngBounds(route.coordinates);
-                map.fitBounds(bounds);
-                hasCenteredOnRoute = true;
+            if (shouldZoomToRoute && e.routes.length > 0) {
+                map.fitBounds(L.latLngBounds(e.routes[0].coordinates));
+                shouldZoomToRoute = false;
             }
         });
     }
 
-    function createDestinationMarker(latlng) {
+    function createDestinationMarker(latlng, nombre = "Destino", descripcion = "Sin descripción") {
         const marker = L.marker(latlng, { draggable: false });
 
         const popupContent = document.createElement('div');
@@ -166,7 +153,7 @@
         popupContent.style.alignItems = 'center';
 
         const label = document.createElement('span');
-        label.textContent = 'Destino';
+        label.textContent = nombre;
         label.style.marginRight = '8px';
 
         const deleteBtn = document.createElement('button');
@@ -177,19 +164,16 @@
         deleteBtn.style.borderRadius = '3px';
         deleteBtn.style.cursor = 'pointer';
         deleteBtn.style.padding = '2px 6px';
-
         deleteBtn.onclick = () => {
             map.removeLayer(marker);
             destinationMarkers = destinationMarkers.filter(m => m !== marker);
-            if (destinationMarkers.length === 0) {
-                if (routingControl) {
-                    map.removeControl(routingControl);
-                    routingControl = null;
-                }
+            if (destinationMarkers.length === 0 && routingControl) {
+                map.removeControl(routingControl);
+                routingControl = null;
                 btnToggleInstructions.style.display = 'none';
                 instructionsVisible = false;
-                hasCenteredOnRoute = false;
             } else {
+                shouldZoomToRoute = false;
                 actualizarRuta();
             }
         };
@@ -199,13 +183,9 @@
         infoButton.style.marginLeft = '8px';
         infoButton.onclick = () => {
             if (typeof Android !== 'undefined' && Android.showInfo) {
-                Android.showInfo(
-                    'Nombre del Lugar',
-                    'Descripción de ejemplo para el destino seleccionado.',
-                    'https://via.placeholder.com/300'
-                );
+                Android.showInfo(nombre, descripcion, "https://via.placeholder.com/300");
             } else {
-                alert('Nombre del Lugar\nDescripción de ejemplo para el destino seleccionado.');
+                alert(nombre + '\n' + descripcion);
             }
         };
 
@@ -214,13 +194,69 @@
         popupContent.appendChild(infoButton);
 
         marker.bindPopup(popupContent);
-
         return marker;
     }
 
+    function setInitialLocation(lat, lng) {
+        currentPosition = L.latLng(lat, lng);
+        locationMarker.setLatLng(currentPosition);
+
+        if (!hasZoomedToInitialLocation) {
+            map.setView(currentPosition, 17);
+            hasZoomedToInitialLocation = true;
+        }
+
+        if (destinationMarkers.length > 0) {
+            actualizarRuta();
+        }
+    }
+
+    if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                setInitialLocation(lat, lng);
+            },
+            (err) => {
+                console.error("Error obteniendo ubicación", err);
+            },
+            { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+        );
+    }
+
+    // Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyB2UazTvsuFFRP3_5oebq-IFewhlcykm8E",
+        authDomain: "descubremastalpaproyec.firebaseapp.com",
+        projectId: "descubremastalpaproyec",
+        storageBucket: "descubremastalpaproyec.appspot.com",
+        messagingSenderId: "334222818266",
+        appId: "1:334222818266:android:ee97b5c4b51e571b0c9ee3"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Mostrar marcadores de Firebase sin generar rutas
+    db.collection("Lugares").get().then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const lat = parseFloat(data.Latitud);
+            const lng = parseFloat(data.Longitud);
+            if (!isNaN(lat) && !isNaN(lng)) {
+                const marker = createDestinationMarker([lat, lng], data.Nombre, data.Descripcion);
+                marker.addTo(map); // solo se agrega, no se añade a ruta
+            }
+        });
+    });
+
+    // Click en el mapa para agregar puntos con ruta
     map.on('click', function (e) {
-        const marker = createDestinationMarker(e.latlng).addTo(map).openPopup();
+        const latlng = e.latlng;
+        const marker = createDestinationMarker(latlng).addTo(map);
         destinationMarkers.push(marker);
+        shouldZoomToRoute = true;
         actualizarRuta();
     });
 </script>
