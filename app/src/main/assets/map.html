@@ -145,7 +145,7 @@
         });
     }
 
-    function createDestinationMarker(latlng, nombre = "Destino", descripcion = "Sin descripción") {
+    function createDestinationMarker(latlng, nombre = "Destino", descripcion = "Sin descripción", url = "Sin URL") {
         const marker = L.marker(latlng, { draggable: false });
 
         const popupContent = document.createElement('div');
@@ -183,7 +183,7 @@
         infoButton.style.marginLeft = '8px';
         infoButton.onclick = () => {
             if (typeof Android !== 'undefined' && Android.showInfo) {
-                Android.showInfo(nombre, descripcion, "https://via.placeholder.com/300");
+                Android.showInfo(nombre, descripcion, url);
             } else {
                 alert(nombre + '\n' + descripcion);
             }
@@ -238,14 +238,14 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Mostrar marcadores de Firebase sin generar rutas
+    // Mostrar marcadores de Firebase sin generar rutas ----------------------
     db.collection("Lugares").get().then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
             const data = doc.data();
             const lat = parseFloat(data.Latitud);
             const lng = parseFloat(data.Longitud);
             if (!isNaN(lat) && !isNaN(lng)) {
-                const marker = createDestinationMarker([lat, lng], data.Nombre, data.Descripcion);
+                const marker = createDestinationMarker([lat, lng], data.Nombre, data.Descripcion, data.URL);
                 marker.addTo(map); // solo se agrega, no se añade a ruta
             }
         });
