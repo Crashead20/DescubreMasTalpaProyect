@@ -21,7 +21,7 @@
 
     <fragment
         android:id="@+id/page_routes"
-        android:name="com.example.descubremastalpaproyect.RoutesFragment"
+        android:name="com.example.descubremastalpaproyect.FragmentRoutes"
         tools:layout="@layout/fragment_routes"
         android:label="Rutas" />
         />
