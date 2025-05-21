@@ -2,29 +2,32 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    app:startDestination="@id/page_map"
-    android:id="@+id/nav">
+    android:id="@+id/nav"
+    app:startDestination="@id/page_map">
 
     <fragment
         android:id="@+id/page_map"
         android:name="com.example.descubremastalpaproyect.MapFragment"
         tools:layout="@layout/fragment_map"
-        android:label="Mapa"
-        />
+        android:label="Mapa" />
 
     <fragment
         android:id="@+id/page_favorites"
         android:name="com.example.descubremastalpaproyect.FavoritesFragment"
         tools:layout="@layout/fragment_favorites"
         android:label="Favoritos" />
-        />
 
     <fragment
         android:id="@+id/page_routes"
         android:name="com.example.descubremastalpaproyect.RoutesFragment"
         tools:layout="@layout/fragment_routes"
-        android:label="Rutas" />
-        />
+        android:label="Rutas">
+
+        <!-- Acción para navegar a page_map -->
+        <action
+            android:id="@+id/action_page_routes_to_page_map"
+            app:destination="@id/page_map" />
+    </fragment>
 
     <fragment
         android:id="@+id/page_account"
@@ -37,7 +40,5 @@
         android:name="com.example.descubremastalpaproyect.SettingsFragment"
         tools:layout="@layout/fragment_settings"
         android:label="Configuración" />
-
-
 
 </navigation>

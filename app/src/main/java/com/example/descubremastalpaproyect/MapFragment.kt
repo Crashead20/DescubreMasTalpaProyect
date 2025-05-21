@@ -16,7 +16,6 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.compose.setContent
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
@@ -38,19 +37,26 @@ class MapFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_map, container, false)
         webView = view.findViewById(R.id.webView)
 
+        // Configuración de WebView
         webView.settings.javaScriptEnabled = true
         webView.settings.allowFileAccess = true
         webView.settings.domStorageEnabled = true
         webView.webChromeClient = WebChromeClient()
-        webView.webViewClient = WebViewClient()
 
-        // Interfaz para comunicarse con JavaScript
+        val generarRuta = arguments?.getBoolean("generarRuta", false) ?: false
+
+        webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView, url: String?) {
+                // Establecer si se debe generar la ruta
+                webView.evaluateJavascript("setShouldGenerateRoute($generarRuta);", null)
+            }
+        }
+
         webView.addJavascriptInterface(JSInterface(), "Android")
-
         webView.loadUrl("file:///android_asset/map.html")
 
+        // Configurar ubicación
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
-
         val locationRequest = LocationRequest.create().apply {
             priority = Priority.PRIORITY_HIGH_ACCURACY
             interval = 5000

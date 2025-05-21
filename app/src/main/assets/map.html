@@ -9,6 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
+    <!-- Leaflet y Leaflet Routing Machine -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     <style>
@@ -31,6 +32,26 @@
         .leaflet-routing-container {
             top: 60px !important;
         }
+        .popup-actions {
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .popup-actions button {
+            font-size: 12px;
+            padding: 4px 6px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .btn-info {
+            background-color: #3388ff;
+            color: white;
+        }
+        .btn-delete {
+            background-color: #dc3545;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -43,7 +64,6 @@
 
 <script>
     const map = L.map('map').setView([19.9124, -104.7263], 17);
-
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© OpenStreetMap'
@@ -63,14 +83,22 @@
     let hasZoomedToInitialLocation = false;
     let shouldZoomToRoute = false;
     let currentPosition = L.latLng([19.9124, -104.7263]);
+    let autoGenerateRoute = false;
+    let puntosFirebaseCargados = false;
+
+    function setShouldGenerateRoute(value) {
+        autoGenerateRoute = value;
+        if (autoGenerateRoute && puntosFirebaseCargados) {
+            shouldZoomToRoute = true;
+            actualizarRuta();
+        }
+    }
 
     const btnToggleInstructions = document.getElementById('toggle-routing-instructions');
-
     btnToggleInstructions.onclick = () => {
         if (!routingControl) return;
         const container = routingControl.getContainer();
         if (!container) return;
-
         container.style.display = instructionsVisible ? 'none' : 'block';
         btnToggleInstructions.textContent = instructionsVisible ? 'Mostrar Indicaciones' : 'Ocultar Indicaciones';
         instructionsVisible = !instructionsVisible;
@@ -78,29 +106,20 @@
 
     function traducirTexto(text) {
         const traducciones = [
-            { en: 'Head northwest on', es: 'Dirígete hacia el noroeste por' },
-            { en: 'Head northeast on', es: 'Dirígete hacia el noreste por' },
-            { en: 'Head southwest on', es: 'Dirígete hacia el suroeste por' },
-            { en: 'Head southeast on', es: 'Dirígete hacia el sureste por' },
-            { en: 'Head east on', es: 'Dirígete hacia el este por' },
-            { en: 'Head west on', es: 'Dirígete hacia el oeste por' },
-            { en: 'Head north on', es: 'Dirígete hacia el norte por' },
-            { en: 'Head south on', es: 'Dirígete hacia el sur por' },
+            { en: 'Head', es: 'Dirígete' },
             { en: 'Turn right onto', es: 'Gira a la derecha en' },
             { en: 'Turn left onto', es: 'Gira a la izquierda en' },
             { en: 'Continue straight onto', es: 'Continúa recto en' },
-            { en: 'You have arrived at your destination', es: 'Has llegado a tu destino' },
+            { en: 'You have arrived at your destination', es: 'Has llegado a tu destino' }
         ];
         for (const t of traducciones) {
-            if (text.startsWith(t.en)) {
-                return text.replace(t.en, t.es);
-            }
+            if (text.startsWith(t.en)) return text.replace(t.en, t.es);
         }
         return text;
     }
 
     function actualizarRuta() {
-        if (destinationMarkers.length === 0) return;
+        if (!autoGenerateRoute || destinationMarkers.length === 0) return;
         const allPoints = [currentPosition, ...destinationMarkers.map(m => m.getLatLng())];
 
         if (routingControl) {
@@ -145,53 +164,38 @@
         });
     }
 
-    function createDestinationMarker(latlng, nombre = "Destino", descripcion = "Sin descripción", url = "Sin URL") {
-        const marker = L.marker(latlng, { draggable: false });
+    function createDestinationMarker(latlng, nombre = "Destino", descripcion = "Sin descripción", url = "Sin URL", permitirEliminar = false) {
+        const marker = L.marker(latlng);
 
         const popupContent = document.createElement('div');
-        popupContent.style.display = 'flex';
-        popupContent.style.alignItems = 'center';
+        popupContent.innerHTML = `<strong>${nombre}</strong><br>${descripcion}`;
 
-        const label = document.createElement('span');
-        label.textContent = nombre;
-        label.style.marginRight = '8px';
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'popup-actions';
 
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = 'X';
-        deleteBtn.style.background = '#ff4d4d';
-        deleteBtn.style.color = 'white';
-        deleteBtn.style.border = 'none';
-        deleteBtn.style.borderRadius = '3px';
-        deleteBtn.style.cursor = 'pointer';
-        deleteBtn.style.padding = '2px 6px';
-        deleteBtn.onclick = () => {
-            map.removeLayer(marker);
-            destinationMarkers = destinationMarkers.filter(m => m !== marker);
-            if (destinationMarkers.length === 0 && routingControl) {
-                map.removeControl(routingControl);
-                routingControl = null;
-                btnToggleInstructions.style.display = 'none';
-                instructionsVisible = false;
-            } else {
-                shouldZoomToRoute = false;
+        if (!permitirEliminar) {
+            const infoBtn = document.createElement('button');
+            infoBtn.textContent = 'Ver info';
+            infoBtn.className = 'btn-info';
+            infoBtn.onclick = () => alert(`Nombre: ${nombre}\nDescripción: ${descripcion}\nURL: ${url}`);
+            actionsDiv.appendChild(infoBtn);
+        }
+
+        if (permitirEliminar) {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = '✖';
+            deleteBtn.className = 'btn-delete';
+            deleteBtn.onclick = () => {
+                map.removeLayer(marker);
+                destinationMarkers = destinationMarkers.filter(m => m !== marker);
                 actualizarRuta();
-            }
-        };
+            };
+            actionsDiv.appendChild(deleteBtn);
+        }
 
-        const infoButton = document.createElement('button');
-        infoButton.textContent = 'Ver Info';
-        infoButton.style.marginLeft = '8px';
-        infoButton.onclick = () => {
-            if (typeof Android !== 'undefined' && Android.showInfo) {
-                Android.showInfo(nombre, descripcion, url);
-            } else {
-                alert(nombre + '\n' + descripcion);
-            }
-        };
-
-        popupContent.appendChild(label);
-        popupContent.appendChild(deleteBtn);
-        popupContent.appendChild(infoButton);
+        if (actionsDiv.children.length > 0) {
+            popupContent.appendChild(actionsDiv);
+        }
 
         marker.bindPopup(popupContent);
         return marker;
@@ -200,13 +204,11 @@
     function setInitialLocation(lat, lng) {
         currentPosition = L.latLng(lat, lng);
         locationMarker.setLatLng(currentPosition);
-
         if (!hasZoomedToInitialLocation) {
             map.setView(currentPosition, 17);
             hasZoomedToInitialLocation = true;
         }
-
-        if (destinationMarkers.length > 0) {
+        if (autoGenerateRoute && destinationMarkers.length > 0) {
             actualizarRuta();
         }
     }
@@ -218,14 +220,11 @@
                 const lng = pos.coords.longitude;
                 setInitialLocation(lat, lng);
             },
-            (err) => {
-                console.error("Error obteniendo ubicación", err);
-            },
+            (err) => console.error("Error de geolocalización", err),
             { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
         );
     }
 
-    // Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyB2UazTvsuFFRP3_5oebq-IFewhlcykm8E",
         authDomain: "descubremastalpaproyec.firebaseapp.com",
@@ -238,26 +237,34 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Mostrar marcadores de Firebase sin generar rutas ----------------------
     db.collection("Lugares").get().then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
             const data = doc.data();
             const lat = parseFloat(data.Latitud);
             const lng = parseFloat(data.Longitud);
             if (!isNaN(lat) && !isNaN(lng)) {
-                const marker = createDestinationMarker([lat, lng], data.Nombre, data.Descripcion, data.URL);
-                marker.addTo(map); // solo se agrega, no se añade a ruta
+                const marker = createDestinationMarker([lat, lng], data.Nombre, data.Descripcion, data.URL, false);
+                marker.addTo(map);
+                destinationMarkers.push(marker);
             }
         });
+
+        puntosFirebaseCargados = true;
+        if (autoGenerateRoute) {
+            shouldZoomToRoute = true;
+            actualizarRuta();
+        }
     });
 
-    // Click en el mapa para agregar puntos con ruta
     map.on('click', function (e) {
         const latlng = e.latlng;
-        const marker = createDestinationMarker(latlng).addTo(map);
-        destinationMarkers.push(marker);
-        shouldZoomToRoute = true;
-        actualizarRuta();
+        const nombre = prompt("Ingresa un nombre para este destino:");
+        if (nombre !== null && nombre.trim() !== "") {
+            const marker = createDestinationMarker(latlng, nombre.trim(), "Manual", "Sin URL", true).addTo(map);
+            destinationMarkers.push(marker);
+            shouldZoomToRoute = true;
+            actualizarRuta();
+        }
     });
 </script>
 
