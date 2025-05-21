@@ -74,9 +74,13 @@ dependencies {
 
     // Import the Firebase & BoM dependencies
     implementation(platform("com.google.firebase:firebase-bom:33.12.0"))
+    implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.android.gms:play-services-auth:21.3.0")
+
+    //Convertidor a tipo Json
+    implementation("com.google.code.gson:gson:2.10.1")
 
     //Google Identity Services
     implementation("androidx.credentials:credentials:1.5.0")
