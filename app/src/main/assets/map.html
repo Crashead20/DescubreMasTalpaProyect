@@ -266,6 +266,22 @@
             actualizarRuta();
         }
     });
+
+     // Función para dibujar la ruta1
+    function dibujarRuta(puntos) {
+    // Eliminar marcadores anteriores
+    destinationMarkers.forEach(m => map.removeLayer(m));
+    destinationMarkers = [];
+
+    // Crear nuevos marcadores con botones y popup
+    puntos.forEach(([nombre, lat, lng]) => {
+        const marker = createDestinationMarker([lat, lng], nombre);
+        marker.addTo(map);
+        destinationMarkers.push(marker);
+    });
+
+    actualizarRuta();
+}
 </script>
 
 </body>
