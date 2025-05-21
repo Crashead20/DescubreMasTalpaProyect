@@ -4,45 +4,71 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.example.descubremastalpaproyect.databinding.FragmentRoutesBinding
+import com.google.firebase.firestore.FirebaseFirestore
 
-class RoutesFragment : Fragment(R.layout.fragment_routes) {
+data class Ubicacion(
+    val nombre: String = "",
+    val descripcion: String = "",
+    val latitud: String = "",
+    val longitud: String = ""
+)
 
-    private var _binding: FragmentRoutesBinding? = null
-    private val binding get() = _binding!!
+object RutaSeleccionada {
+    var puntos: List<Ubicacion> = listOf()
+}
+
+class FragmentRoutes : Fragment() {
+
+    private lateinit var layoutLista: LinearLayout
+    private val ubicaciones = mutableListOf<Ubicacion>()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentRoutesBinding.inflate(inflater, container, false)
-        return binding.root
-    }
+        val view = inflater.inflate(R.layout.fragment_routes, container, false)
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+        layoutLista = view.findViewById(R.id.listaUbicaciones)
+        val btnSeguir = view.findViewById<Button>(R.id.btnSeguirRuta)
+        val tituloRuta = view.findViewById<TextView>(R.id.tituloRuta)
 
-        // Texto ejemplo, puedes quitarlo si no lo necesitas
-        binding.tvRoutes.text = "Fragment Rutas"
+        tituloRuta.text = "Ruta Ejemplo 1"
 
-        // Cuando el usuario toca el botón, se navega al MapFragment
-        // con el argumento 'generarRuta = true'
-        binding.btnSeguirRuta.setOnClickListener {
-            val bundle = Bundle().apply {
-                putBoolean("generarRuta", true)
-            }
-
-            findNavController().navigate(
-                R.id.action_page_routes_to_page_map, // Asegúrate de que este ID esté bien en nav_graph.xml
-                bundle
-            )
+        btnSeguir.setOnClickListener {
+            RutaSeleccionada.puntos = ubicaciones
+            findNavController().navigate(R.id.page_map)
         }
+
+        cargarUbicaciones()
+
+        return view
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+    private fun cargarUbicaciones() {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("Lugares").document("ruta_1").collection("puntos")
+            .get()
+            .addOnSuccessListener { result ->
+                layoutLista.removeAllViews()
+                ubicaciones.clear()
+
+                for (doc in result) {
+                    val ubicacion = doc.toObject(Ubicacion::class.java)
+                    ubicaciones.add(ubicacion)
+
+                    val nombreView = TextView(requireContext())
+                    nombreView.text = "${ubicaciones.size}. ${ubicacion.nombre}"
+                    nombreView.textSize = 16f
+                    nombreView.setPadding(16, 16, 16, 16)
+                    layoutLista.addView(nombreView)
+                }
+            }
     }
 }
+
+private fun MatchGroup?.addOnSuccessListener(function: Any) {}
